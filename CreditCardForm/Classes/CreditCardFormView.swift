@@ -31,7 +31,15 @@ public class CreditCardFormView : UIView {
     fileprivate var backLine: UIView         = UIView(frame: .zero)
     fileprivate var cvc: AKMaskField         = AKMaskField(frame: .zero)
     fileprivate var chipImg: UIImageView     = UIImageView(frame: .zero)
-    fileprivate var amex                    = false
+    fileprivate var amex:Bool=false {
+        
+        didSet {
+            if oldValue != amex
+            {
+                amex ? formatCVCForAmex() : formatCVCForNonAmex()
+            }
+        }
+    }
     
     public var colors = [String : [UIColor]]()
     
@@ -351,18 +359,52 @@ public class CreditCardFormView : UIView {
         cvc.translatesAutoresizingMaskIntoConstraints = false
         cvc.maskExpression = "..."
         cvc.text = "CVC"
-        cvc.backgroundColor = .white
+        
         cvc.textAlignment = NSTextAlignment.center
         cvc.isUserInteractionEnabled = false
-        backView.addSubview(cvc)
         
-        self.addConstraint(NSLayoutConstraint(item: cvc, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: backLine, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 10));
-        
+        formatCVCForNonAmex()
+    }
+    
+    fileprivate func setCVCSizeConstraints()
+    {
         self.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[view(==50)]", options: NSLayoutFormatOptions(rawValue: 0), metrics: nil, views: ["view": cvc]));
         
         self.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:[view(==25)]", options: NSLayoutFormatOptions(rawValue: 0), metrics: nil, views: ["view": cvc]));
+
+    }
+    
+    fileprivate func formatCVCForNonAmex()
+    {
+        cvc.textColor = .black
+        cvc.backgroundColor = .white
+        cvc.font = UIFont(name: "Helvetica Neue", size: 20)
+
+        
+        cvc.removeFromSuperview()
+        backView.addSubview(cvc)
+
+        setCVCSizeConstraints()
+
+        self.addConstraint(NSLayoutConstraint(item: cvc, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: backLine, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 10));
         
         self.addConstraint(NSLayoutConstraint(item: cvc, attribute: NSLayoutAttribute.trailing, relatedBy: NSLayoutRelation.equal, toItem: backView, attribute: NSLayoutAttribute.trailing, multiplier: 1.0, constant: -10));
+    }
+    
+    fileprivate func formatCVCForAmex()
+    {
+        cvc.font = UIFont(name: "Helvetica Neue", size: 12)
+        cvc.backgroundColor = .clear
+        cvc.textColor = .white
+
+        cvc.removeFromSuperview()
+        frontView.addSubview(cvc)
+        
+        setCVCSizeConstraints()
+        
+        self.addConstraint(NSLayoutConstraint(item: cvc, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: expireDateText, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 1.0))
+        
+        self.addConstraint(NSLayoutConstraint(item: cvc, attribute: NSLayoutAttribute.trailing, relatedBy: NSLayoutRelation.equal, toItem: frontView, attribute: NSLayoutAttribute.trailing, multiplier: 1.0, constant: -10))
     }
     
     private func setType(colors: [UIColor], alpha: CGFloat, back: UIColor) {
@@ -412,6 +454,7 @@ public class CreditCardFormView : UIView {
                 self.brandImageView.image = nil
                 if let name = colors["NONE"] {
                     setType(colors: [name[0], name[1]], alpha: 0.5, back: name[0])
+                    amex = false
                 }
                 return
             }
@@ -422,6 +465,7 @@ public class CreditCardFormView : UIView {
                     if !amex {
                         self.cardNumber.maskExpression = "{....} {....} {....} {...}"
                         amex = true
+                        
                     }
                 }else {
                     amex = false
@@ -442,7 +486,8 @@ public class CreditCardFormView : UIView {
     }
     
     public func paymentCardTextFieldDidBeginEditingCVC() {
-        if !showingBack {
+        
+        if !showingBack && !amex {
             flip()
             showingBack = true
         }
@@ -454,7 +499,6 @@ public class CreditCardFormView : UIView {
             showingBack = false
         }
     }
-    
 }
 
 //: CardColors
